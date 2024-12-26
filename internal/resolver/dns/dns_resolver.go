@@ -24,6 +24,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	rand "math/rand/v2"
 	"net"
 	"net/netip"
@@ -218,6 +219,7 @@ func (d *dnsResolver) watcher() {
 			// seconds at the very least to prevent constantly re-resolving.
 			backoffIndex = 1
 			nextResolutionTime = internal.TimeNowFunc().Add(MinResolutionInterval)
+			log.Printf("dns: next resolution time: %v", nextResolutionTime)
 			select {
 			case <-d.ctx.Done():
 				return
@@ -321,6 +323,7 @@ func (d *dnsResolver) lookupHost(ctx context.Context) ([]resolver.Address, error
 		err = handleDNSError(err, "A")
 		return nil, err
 	}
+	log.Printf("dns: A record IPs: %v", addrs)
 	newAddrs := make([]resolver.Address, 0, len(addrs))
 	for _, a := range addrs {
 		ip, err := formatIP(a)
@@ -334,6 +337,7 @@ func (d *dnsResolver) lookupHost(ctx context.Context) ([]resolver.Address, error
 }
 
 func (d *dnsResolver) lookup() (*resolver.State, error) {
+	log.Printf("lookup: %v", d.host)
 	ctx, cancel := context.WithTimeout(d.ctx, ResolvingTimeout)
 	defer cancel()
 	srv, srvErr := d.lookupSRV(ctx)
