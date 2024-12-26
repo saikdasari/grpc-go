@@ -189,6 +189,7 @@ type dnsResolver struct {
 // ResolveNow invoke an immediate resolution of the target that this
 // dnsResolver watches.
 func (d *dnsResolver) ResolveNow(resolver.ResolveNowOptions) {
+	log.Printf("dns: ResolveNow called")
 	select {
 	case d.rn <- struct{}{}:
 	default:
@@ -226,11 +227,13 @@ func (d *dnsResolver) watcher() {
 			case <-d.rn:
 			}
 		} else {
+			log.Printf("dns: failed to resolve: %v", err)
 			// Poll on an error found in DNS Resolver or an error received from
 			// ClientConn.
 			nextResolutionTime = internal.TimeNowFunc().Add(backoff.DefaultExponential.Backoff(backoffIndex))
 			backoffIndex++
 		}
+		log.Printf("dns: waiting until %v for next resolution", nextResolutionTime)
 		select {
 		case <-d.ctx.Done():
 			return
